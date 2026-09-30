@@ -32,6 +32,7 @@ export class TimerStore {
   }
 
   check(id: string): TimerStatus {
+    id = id.toLowerCase();
     const timer = this.#timers.get(id);
     if (!timer) {
       throw new Error('Unknown timer_id. Timers are lost when the server restarts; the minimum duration cannot be verified.');

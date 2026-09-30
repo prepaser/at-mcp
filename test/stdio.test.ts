@@ -33,30 +33,31 @@ function connection() {
   };
 }
 
-test('stdio exposes timers, validates calls, and loses state on restart', { timeout: 15_000 }, async () => {
+test('stdio exposes timers, validates calls, and loses state on restart', { timeout: 15_000 }, async t => {
+  const options = { signal: t.signal };
   const first = connection();
   let timerId = '';
   try {
-    await first.client.connect(first.transport);
-    const { tools } = await first.client.listTools();
+    await first.client.connect(first.transport, options);
+    const { tools } = await first.client.listTools({}, options);
     assert.deepEqual(tools.map(tool => tool.name), ['start_timer', 'check_timer']);
     assert.ok(tools.every(tool => tool.outputSchema));
 
-    const started = status(await first.client.callTool({ name: 'start_timer', arguments: { min_seconds: 1800 } }));
+    const started = status(await first.client.callTool({ name: 'start_timer', arguments: { min_seconds: 1800 } }, options));
     timerId = started.timer_id;
     assert.equal(started.min_seconds, 1800);
     assert.equal(started.minimum_met, false);
-    const checked = status(await first.client.callTool({ name: 'check_timer', arguments: { timer_id: timerId } }));
+    const checked = status(await first.client.callTool({ name: 'check_timer', arguments: { timer_id: timerId.toUpperCase() } }, options));
     assert.equal(checked.timer_id, timerId);
     assert.equal(checked.minimum_met, false);
     assert.ok(checked.elapsed_seconds >= started.elapsed_seconds);
     assert.ok(checked.remaining_seconds > 0);
 
     for (const duration of [0, -1, 0.5, Number.MAX_SAFE_INTEGER + 1, '1800']) {
-      const result = await first.client.callTool({ name: 'start_timer', arguments: { min_seconds: duration } });
+      const result = await first.client.callTool({ name: 'start_timer', arguments: { min_seconds: duration } }, options);
       assert.equal(result.isError, true);
     }
-    const malformed = await first.client.callTool({ name: 'check_timer', arguments: { timer_id: 'invalid' } });
+    const malformed = await first.client.callTool({ name: 'check_timer', arguments: { timer_id: 'invalid' } }, options);
     assert.equal(malformed.isError, true);
   } finally {
     await first.client.close();
@@ -68,11 +69,11 @@ test('stdio exposes timers, validates calls, and loses state on restart', { time
 
   const second = connection();
   try {
-    await second.client.connect(second.transport);
-    const missing = await second.client.callTool({ name: 'check_timer', arguments: { timer_id: timerId } });
+    await second.client.connect(second.transport, options);
+    const missing = await second.client.callTool({ name: 'check_timer', arguments: { timer_id: timerId } }, options);
     assert.equal(missing.isError, true);
     assert.match(JSON.stringify(missing.content), /cannot be verified/);
-    const fresh = status(await second.client.callTool({ name: 'start_timer', arguments: { min_seconds: 1800 } }));
+    const fresh = status(await second.client.callTool({ name: 'start_timer', arguments: { min_seconds: 1800 } }, options));
     assert.notEqual(fresh.timer_id, timerId);
     assert.equal(fresh.minimum_met, false);
   } finally {

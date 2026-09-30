@@ -71,7 +71,7 @@ Both tools return the same status as structured content and JSON text:
 }
 ```
 
-Elapsed seconds are rounded down, and remaining seconds are rounded up to a minimum of zero. `minimum_met` compares the unrounded elapsed duration with the requested minimum, so it cannot become true early because of rounding. Timing uses Node.js's monotonic `process.hrtime.bigint()` and is unaffected by system time adjustments.
+Elapsed seconds are rounded down, and remaining seconds are rounded up to a minimum of zero. `minimum_met` compares the unrounded elapsed duration with the requested minimum, so it cannot become true early because of rounding. Timing uses Node.js's monotonic `process.hrtime.bigint()` and is unaffected by system time adjustments. Timer ID lookups are case-insensitive and return the canonical lowercase ID.
 
 Each start call creates a new timer; it does not reset an existing one. Timers stay in process memory until the server exits, including after their minimum duration has elapsed. There is no automatic expiration, persistence, reset, or waiting tool. A server restart loses all timers. Invalid inputs and unknown IDs return `isError: true`; missing timers are never treated as having met their minimum.
 
@@ -112,4 +112,4 @@ Log in once with `npm login`, then publish:
 npm publish --access public
 ```
 
-Publishing runs type checks, tests, and the build automatically. npm reads the version from `package.json`. For subsequent releases, bump it with `npm version patch --no-git-tag-version`, using `minor` or `major` as appropriate.
+Publishing runs type checks, tests, and the build automatically, then installs a temporary package and verifies its CLI and both MCP tools. Run `pnpm check:package` to perform the package check separately. npm reads the version from `package.json`. For subsequent releases, bump it with `npm version patch --no-git-tag-version`, using `minor` or `major` as appropriate.
