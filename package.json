@@ -1,0 +1,25 @@
+{
+  "name": "at-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A local MCP server for checking minimum task durations.",
+  "packageManager": "pnpm@11.26.0",
+  "engines": {
+    "node": ">=24.12.0"
+  },
+  "scripts": {
+    "start": "node src/index.ts",
+    "check": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.2.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.2.0",
+    "@types/node": "26.6.3",
+    "typescript": "7.0.2"
+  }
+}
