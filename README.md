@@ -14,13 +14,6 @@ npx --yes at-mcp@latest
 
 The server listens on stdin and writes MCP messages to stdout. It exits when the client closes stdin. It is normally launched by your MCP host rather than used interactively.
 
-For a global installation:
-
-```sh
-npm install --global at-mcp@latest
-at-mcp
-```
-
 ## Connect
 
 Add the following entry to your MCP host's configuration, adapting the surrounding structure to that host:
@@ -35,8 +28,6 @@ Add the following entry to your MCP host's configuration, adapting the surroundi
   }
 }
 ```
-
-For a global installation, use `"command": "at-mcp"` and `"args": []`.
 
 ### Codex
 
