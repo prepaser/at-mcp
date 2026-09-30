@@ -6,31 +6,37 @@ The server measures elapsed time, including tool waits. It does not measure acti
 
 ## Setup
 
-Requires Node.js 24.12.0 or newer and pnpm.
+Requires Node.js 24.12.0 or newer and npm.
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm check
-pnpm test
-pnpm start
+npx --yes at-mcp
 ```
 
-TypeScript runs directly in Node.js without a build step. The server listens on stdin and writes MCP messages to stdout. It exits when the client closes stdin.
+The server listens on stdin and writes MCP messages to stdout. It exits when the client closes stdin. It is normally launched by your MCP host rather than used interactively.
+
+For a global installation:
+
+```sh
+npm install --global at-mcp
+at-mcp
+```
 
 ## Connect
 
-Add the following server entry to your MCP host's configuration, adapting the surrounding structure to that host. Replace the paths with your actual Node.js executable and checkout paths. Launch Node.js directly so package-manager output cannot enter the protocol stream.
+Add the following entry to your MCP host's configuration, adapting the surrounding structure to that host:
 
 ```json
 {
   "mcpServers": {
     "at-mcp": {
-      "command": "/usr/bin/node",
-      "args": ["/absolute/path/to/at-mcp/src/index.ts"]
+      "command": "npx",
+      "args": ["--yes", "at-mcp"]
     }
   }
 }
 ```
+
+To pin a release, replace `at-mcp` in the arguments with `at-mcp@0.1.0`. For a global installation, use `"command": "at-mcp"` and `"args": []`.
 
 ## Tools
 
@@ -61,11 +67,34 @@ The tool descriptions and server instructions explain the workflow. Add the foll
 
 ```text
 When the user requests a minimum task duration:
-1. Convert the duration to seconds and call start_timer at the beginning of work. For 30 minutes, use min_seconds: 1800. Preserve the returned timer_id and min_seconds in task context, including context summaries. Reuse that timer for the task.
+1. Convert the duration to whole seconds, rounding up, and call start_timer at the beginning of work. For 30 minutes, use min_seconds: 1800. Preserve the returned timer_id and min_seconds in task context, including context summaries. Reuse that timer for the task.
 2. Call check_timer after long tool calls, at task phase changes, and immediately before a completion response. Use its result rather than estimating elapsed time yourself.
-3. Do not end the task with a completion response while minimum_met is false, even if the main implementation appears finished. Continue task-relevant implementation, review, investigation, or unresolved verification. Do not fill time with idle waiting, rapid timer polling, redundant test runs, or unrelated changes.
-4. Require both minimum_met: true and completion of the requested work before reporting completion. Reaching the minimum duration is not a reason to stop unfinished work. Elapsed time includes tool waits and does not prove active effort.
-5. Progress updates, status questions, and context compaction do not end the task or reset its timer. Retain the duration requirement through follow-up messages unless the user explicitly cancels or changes it. Follow an explicit request to stop immediately.
+3. Do not end the task with a completion response before the current minimum duration has elapsed, even if the main implementation appears finished. Continue task-relevant implementation, review, investigation, or unresolved verification. Do not fill time with idle waiting, rapid timer polling, redundant test runs, or unrelated changes.
+4. Require both the current minimum duration and completion of the requested work before reporting completion. For an unchanged minimum, require minimum_met: true. Reaching the minimum duration is not a reason to stop unfinished work. Elapsed time includes tool waits and does not prove active effort.
+5. Progress updates, status questions, and context compaction do not end the task or reset its timer. Retain the duration requirement unless the user explicitly cancels or changes it. If the minimum changes, keep the same timer and preserve the revised minimum in task context. Convert the revised duration to whole seconds, rounding up, and require elapsed_seconds to reach it instead of using minimum_met, which still refers to the original minimum. The revised duration is measured from the original task start unless the user explicitly requests a new start. Follow an explicit request to stop immediately.
 6. If a timer call fails, correct invalid arguments or retry a transient failure. An unknown or lost timer cannot verify earlier elapsed time: do not claim the minimum was met or silently start a replacement. If timing cannot be verified or required task input or tools are unavailable, report the limitation instead of claiming completion.
 Without a minimum-duration request, do not start a timer automatically.
 ```
+
+## Development
+
+Install pnpm and work from the repository checkout:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm check
+pnpm test
+pnpm start
+```
+
+Development runs TypeScript directly in Node.js. `pnpm build` replaces `dist/` with the compiled JavaScript CLI so old build artifacts cannot enter a release. To connect a host to your checkout, use `node` as the command and the absolute path to `src/index.ts` as its argument.
+
+## Publishing
+
+Log in once with `npm login`, then publish:
+
+```sh
+npm publish --access public
+```
+
+Publishing runs type checks, tests, and the build automatically. npm reads the version from `package.json`. For subsequent releases, bump it with `npm version patch --no-git-tag-version`, using `minor` or `major` as appropriate.
