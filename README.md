@@ -1,6 +1,6 @@
 # at-mcp
 
-A local MCP server that lets agents check whether a user-requested minimum task duration has elapsed. For a request such as “work for at least 30 minutes,” the agent starts a 1,800-second timer and checks it before its final response.
+A local MCP server that helps agents stay aware of elapsed time and check whether a user-requested minimum task duration has been met. For a request such as “work for at least 30 minutes,” the agent starts a 1,800-second timer and checks it before its final response.
 
 The server measures elapsed time, including tool waits. It does not measure active effort, judge task completion, or block an agent from ending early. Compliance depends on the agent following the instructions.
 
