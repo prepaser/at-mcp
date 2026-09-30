@@ -9,7 +9,7 @@ The server measures elapsed time, including tool waits. It does not measure acti
 Requires Node.js 24.12.0 or newer and npm.
 
 ```sh
-npx --yes at-mcp
+npx --yes at-mcp@latest
 ```
 
 The server listens on stdin and writes MCP messages to stdout. It exits when the client closes stdin. It is normally launched by your MCP host rather than used interactively.
@@ -17,7 +17,7 @@ The server listens on stdin and writes MCP messages to stdout. It exits when the
 For a global installation:
 
 ```sh
-npm install --global at-mcp
+npm install --global at-mcp@latest
 at-mcp
 ```
 
@@ -30,13 +30,27 @@ Add the following entry to your MCP host's configuration, adapting the surroundi
   "mcpServers": {
     "at-mcp": {
       "command": "npx",
-      "args": ["--yes", "at-mcp"]
+      "args": ["--yes", "at-mcp@latest"]
     }
   }
 }
 ```
 
-To pin a release, replace `at-mcp` in the arguments with `at-mcp@0.1.0`. For a global installation, use `"command": "at-mcp"` and `"args": []`.
+For a global installation, use `"command": "at-mcp"` and `"args": []`.
+
+### Codex
+
+```sh
+codex mcp add at-mcp -- npx --yes at-mcp@latest
+```
+
+Or add this to `~/.codex/config.toml` ([Codex MCP docs](https://developers.openai.com/codex/mcp/)):
+
+```toml
+[mcp_servers.at-mcp]
+command = "npx"
+args = ["--yes", "at-mcp@latest"]
+```
 
 ## Tools
 
