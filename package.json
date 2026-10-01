@@ -1,6 +1,6 @@
 {
   "name": "at-mcp",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "description": "A local MCP server for checking minimum task durations.",
   "license": "AGPL-3.0-only",
