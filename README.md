@@ -80,22 +80,6 @@ Elapsed seconds are rounded down, and remaining seconds are rounded up to a mini
 
 Each start call creates a new timer; it does not reset an existing one. Timers stay in process memory until the server exits, including after their minimum duration has elapsed. There is no automatic expiration, persistence, reset, or waiting tool. A server restart loses all timers. Invalid inputs and unknown IDs return `isError: true`; missing timers are never treated as having met their minimum.
 
-## Agent instructions
-
-The tool descriptions and server instructions explain the workflow. Add the following to your agent's instructions if you want an explicit rule:
-
-```text
-When the user requests a minimum task duration, call start_timer and preserve timer_id. Do not report completion until both the current minimum has elapsed and the requested work is complete. Call check_timer to verify elapsed time and continue useful work while the minimum is unmet. Never treat timer errors as proof of elapsed time or silently replace a lost timer. Honor explicit stop requests.
-
-1. Convert the duration to whole seconds, rounding up, and call start_timer at the beginning of work. For 30 minutes, use min_seconds: 1800. Preserve the returned timer_id and min_seconds in task context, including context summaries. Reuse that timer for the task.
-2. Call check_timer after long tool calls, at task phase changes, and immediately before a completion response. Use its result rather than estimating elapsed time yourself.
-3. Even if the main implementation appears finished, use the remaining time for task-relevant review, investigation, or unresolved verification. Do not fill time with idle waiting, rapid timer polling, redundant test runs, or unrelated changes.
-4. For an unchanged minimum, require minimum_met: true. Reaching the minimum duration is not a reason to stop unfinished work. Elapsed time includes tool waits and does not prove active effort.
-5. Progress updates, status questions, and context compaction do not end the task or reset its timer. Retain the duration requirement unless the user explicitly cancels or changes it. If the minimum changes, keep the same timer and preserve the revised minimum in task context. Convert the revised duration to whole seconds, rounding up, and require elapsed_seconds to reach it instead of using minimum_met, which still refers to the original minimum. The revised duration is measured from the original task start unless the user explicitly requests a new start.
-6. If a timer call fails, correct invalid arguments or retry a transient failure. An unknown or lost timer cannot verify earlier elapsed time. If timing cannot be verified or required task input or tools are unavailable, report the limitation instead of claiming completion.
-Without a minimum-duration request, do not start a timer automatically.
-```
-
 ## Development
 
 Install pnpm and work from the repository checkout:
