@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import * as z from 'zod/v4';
-import { TimerStore, type TimerStatus } from './timer.ts';
+import { TimerStore } from './timer.ts';
+import { currentTime } from './time.ts';
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -15,10 +16,10 @@ const statusSchema = z.object({
   minimum_met: z.boolean(),
 });
 
-function result(status: TimerStatus) {
+function result(data: Record<string, unknown>) {
   return {
-    content: [{ type: 'text' as const, text: JSON.stringify(status) }],
-    structuredContent: status,
+    content: [{ type: 'text' as const, text: JSON.stringify(data) }],
+    structuredContent: data,
   };
 }
 
@@ -49,6 +50,13 @@ Without a minimum-duration request, do not start a timer automatically.`,
     outputSchema: statusSchema,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, ({ timer_id }) => result(timers.check(timer_id)));
+
+  server.registerTool('get_current_time', {
+    description: 'Get the current system time as an ISO 8601 timestamp with a UTC offset and a time_zone name or offset. Optional time_zone accepts names such as Asia/Seoul or UTC and offsets such as +09:00; the default is the server\'s local zone, which may differ from the user\'s. For "work until 9 PM", resolve the user\'s date and time zone; ask if unclear. Preserve the absolute deadline in task context and summaries. Check it after long tool calls and before completion; continue useful work until it is reached. Honor explicit stop requests. Use start_timer and check_timer for minimum task durations.',
+    inputSchema: z.strictObject({ time_zone: z.string().min(1).optional() }),
+    outputSchema: z.object({ current_time: z.iso.datetime({ offset: true }), time_zone: z.string() }),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  }, ({ time_zone }) => result(currentTime(time_zone)));
 
   return server;
 });

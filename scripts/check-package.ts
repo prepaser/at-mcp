@@ -32,7 +32,14 @@ try {
   await client.connect(transport, options);
   assert.equal(client.getServerVersion()?.version, pkg.version);
   const { tools } = await client.listTools({}, options);
-  assert.deepEqual(tools.map(tool => tool.name), ['start_timer', 'check_timer']);
+  assert.deepEqual(tools.map(tool => tool.name), ['start_timer', 'check_timer', 'get_current_time']);
+
+  const before = Date.now();
+  const current = await client.callTool({ name: 'get_current_time', arguments: {} }, options);
+  assert.ok(!current.isError);
+  const time = current.structuredContent as { current_time: string };
+  const timestamp = Date.parse(time.current_time);
+  assert.ok(timestamp >= before && timestamp <= Date.now());
 
   const started = await client.callTool({ name: 'start_timer', arguments: { min_seconds: 600 } }, options);
   assert.ok(!started.isError);

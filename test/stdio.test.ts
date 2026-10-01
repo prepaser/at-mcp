@@ -40,8 +40,23 @@ test('stdio exposes timers, validates calls, and loses state on restart', { time
   try {
     await first.client.connect(first.transport, options);
     const { tools } = await first.client.listTools({}, options);
-    assert.deepEqual(tools.map(tool => tool.name), ['start_timer', 'check_timer']);
+    assert.deepEqual(tools.map(tool => tool.name), ['start_timer', 'check_timer', 'get_current_time']);
     assert.ok(tools.every(tool => tool.outputSchema));
+
+    const before = Date.now();
+    const current = await first.client.callTool({ name: 'get_current_time', arguments: { time_zone: 'Asia/Seoul' } }, options);
+    assert.ok(!current.isError);
+    const time = current.structuredContent as { current_time: string; time_zone: string };
+    const timestamp = Date.parse(time.current_time);
+    assert.ok(timestamp >= before && timestamp <= Date.now());
+    assert.match(time.current_time, /\+09:00$/);
+    assert.equal(time.time_zone, 'Asia/Seoul');
+    const text = current.content?.find(block => block.type === 'text');
+    assert.ok(text?.type === 'text');
+    assert.deepEqual(JSON.parse(text.text), time);
+
+    const invalidZone = await first.client.callTool({ name: 'get_current_time', arguments: { time_zone: 'Invalid/Zone' } }, options);
+    assert.equal(invalidZone.isError, true);
 
     const started = status(await first.client.callTool({ name: 'start_timer', arguments: { min_seconds: 1800 } }, options));
     timerId = started.timer_id;
